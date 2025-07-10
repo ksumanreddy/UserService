@@ -64,9 +64,15 @@ public class UserService {
    public void logout(String token) {
         Optional<Token> optionalToken = tokenRepo.findByToken(token);
         if (optionalToken.isEmpty()) {
-            throw new RuntimeException("Token not found");
+            throw new RuntimeException("Token not found.");
         }
         Token existingToken = optionalToken.get();
+        if(existingToken.getExpiresAt() < System.currentTimeMillis()){
+            throw new RuntimeException("Token is expired.");
+        }
+        if(existingToken.isDeleted()){
+            throw new RuntimeException("Token is deleted.");
+        }
         existingToken.setDeleted(true);
         tokenRepo.save(existingToken);
    }

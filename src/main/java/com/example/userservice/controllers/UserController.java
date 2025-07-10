@@ -67,7 +67,7 @@ public class UserController {
               userService.logout(token);
               return ResponseEntity.ok("Logout successful");
           }catch (Exception e) {
-              return ResponseEntity.status(400).body("Error logging out");
+              return ResponseEntity.status(400).body(e.getMessage() + " Error logging out");
           }
     }
 
