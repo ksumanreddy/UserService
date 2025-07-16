@@ -2,10 +2,13 @@ package com.example.userservice.services;
 
 import com.example.userservice.Repo.TokenRepo;
 import com.example.userservice.Repo.UserRepo;
+import com.example.userservice.events.SendEmail;
 import com.example.userservice.models.Token;
 import com.example.userservice.models.Users;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +21,17 @@ public class UserService {
     private UserRepo userRepo;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     private TokenRepo tokenRepo;
+    private KafkaTemplate<String, String> kafkaTemplate;
+    private ObjectMapper objectMapper;
 
-    public UserService(UserRepo userRepo,TokenRepo tokenRepo, BCryptPasswordEncoder bCryptPasswordEncoder) {
+    public UserService(UserRepo userRepo,TokenRepo tokenRepo, BCryptPasswordEncoder bCryptPasswordEncoder
+                      , KafkaTemplate<String, String> kafkaTemplate,
+                       ObjectMapper objectMapper) {
         this.userRepo = userRepo;
         this.bCryptPasswordEncoder = new BCryptPasswordEncoder();
         this.tokenRepo = tokenRepo;
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
    public Users signuUp(String name, String email, String password) throws Exception {
@@ -38,6 +47,13 @@ public class UserService {
        user.setCreatedAt(Instant.now().toEpochMilli());
        user.setUpdatedAt(Instant.now().toEpochMilli());
        userRepo.save(user);
+       // Publish an event to Kafka
+       SendEmail sendEmail = new SendEmail();
+       sendEmail.setTo(email);
+       sendEmail.setBody("Hello " + name + "! Welcome to our service. \n Thank you,\n Suman");
+       sendEmail.setSubject("Welcome to our service");
+       sendEmail.setFrom("sumankreddy100@gmail.com");
+       kafkaTemplate.send("send_email",objectMapper.writeValueAsString(sendEmail));
        return user;
    }
 

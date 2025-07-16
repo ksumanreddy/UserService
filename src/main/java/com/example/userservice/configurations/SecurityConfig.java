@@ -76,21 +76,21 @@ public class SecurityConfig {
 	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
 			throws Exception {
 		http
-			.authorizeHttpRequests((authorize) -> authorize
-				.anyRequest().authenticated()
-			)
-			// Form login handles the redirect to the login page from the
-			// authorization server filter chain
-			.formLogin(Customizer.withDefaults());
+				.csrf(csrf -> csrf.disable())
+				.authorizeHttpRequests((authorize) -> authorize
+						.requestMatchers("/users/**").permitAll()
+						.anyRequest().authenticated()
+				)
+				.formLogin(Customizer.withDefaults());
 
 		return http.build();
 	}
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		UserDetails userDetails = User.withDefaultPasswordEncoder()
+		UserDetails userDetails = User.builder()
 				.username("user")
-				.password("password")
+				.password("$2a$16$KsrV5CC31vyP7f9hb/.2J.Zm3yt3ah6q1ZFbAkbb7tDjzNLNWQNW2")
 				.roles("USER")
 				.build();
 
@@ -105,10 +105,11 @@ public class SecurityConfig {
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-				.redirectUri("http://127.0.0.1:8080/login/oauth2/code/oidc-client")
-				.postLogoutRedirectUri("http://127.0.0.1:8080/")
+				.redirectUri("https://oauth.pstmn.io/v1/callback")
+				.postLogoutRedirectUri("https://oauth.pstmn.io/v1/callback")
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
+				.scope("admin")
 				.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
 				.build();
 
